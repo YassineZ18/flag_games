@@ -153,6 +153,7 @@ function App() {
   return (
     <div style={{ textAlign: "center", marginTop: 40 }}>
       <button onClick={async () => { await supabase.auth.signOut(); }} style={{ position: 'absolute', right: 20, top: 20, padding: '8px 16px', fontSize: 14 }}>Déconnexion</button>
+      <img src="/logo.png" alt="Logo YZ" style={{ height: 80, marginBottom: 12 }} />
       <h1 style={{ marginBottom: 4 }}>Flag Games</h1>
       <div style={{ fontSize: 16, color: '#888', marginBottom: 18 }}>by Yassine Zaoui</div>
       <div style={{
