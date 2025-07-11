@@ -13,12 +13,20 @@ function RandomCircuitImage() {
   return <img src={src} alt="Circuit F1" style={{ height: 64, marginBottom: 12, borderRadius: 12, background: '#fff' }} />;
 }
 
-export default function Welcome({ onStart, onCapitales, onCircuits }) {
+export default function Welcome({ onStart, onCapitales, onCircuits, onLogout }) {
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh',
-      fontFamily: 'inherit', padding: 32, background: '#f9fbfd'
+      fontFamily: 'inherit', padding: 32, background: '#f9fbfd', position: 'relative'
     }}>
+      <button
+        onClick={onLogout}
+        style={{
+          position: 'absolute', right: 24, top: 24, padding: '10px 22px', fontSize: 17, background: '#fff', border: '2px solid #e74c3c', color: '#e74c3c', borderRadius: 8, fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 12px #e74c3c22', zIndex: 10
+        }}
+      >
+        Déconnexion
+      </button>
       <img src="/logo.png" alt="Logo YZ" style={{ height: 100, marginBottom: 32 }} />
       <h1 style={{ marginBottom: 8, fontSize: 54, color: '#0984e3', fontWeight: 900, letterSpacing: 2, textShadow: '1px 2px 12px #fff6, 0 1px 0 #fff' }}>
         Yassine gameZ

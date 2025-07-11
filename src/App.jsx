@@ -40,19 +40,9 @@ function App() {
   const [showWelcome, setShowWelcome] = useState(true);
   const [selectedGame, setSelectedGame] = useState(null);
 
-  // Mélangeur
-  function shuffle(array) {
-    return array
-      .map((v) => ({ v, sort: Math.random() }))
-      .sort((a, b) => a.sort - b.sort)
-      .map(({ v }) => v);
-  }
-
   // Propositions à chaque changement de drapeau
   useEffect(() => {
-    // Ne démarre le chrono que si on n'est plus sur l'écran Welcome
     if (showWelcome) return;
-    // À chaque changement de drapeau, génère de nouvelles propositions
     const bonnes = [drapeaux[index]];
     let mauvaises = drapeaux.filter((_, i) => i !== index);
     mauvaises = shuffle(mauvaises).slice(0, 3);
@@ -73,7 +63,6 @@ function App() {
         });
       }, 1000);
     }
-    // Nettoyage à la sortie
     return () => clearInterval(timerRef.current);
   }, [index, showWelcome]);
 
@@ -110,7 +99,14 @@ function App() {
     return undefined;
   }, [timer, answered, gameOver, serie]);
 
-  const handleGuess = (isCorrect) => {
+  function shuffle(array) {
+    return array
+      .map((v) => ({ v, sort: Math.random() }))
+      .sort((a, b) => a.sort - b.sort)
+      .map(({ v }) => v);
+  }
+
+  function handleGuess(isCorrect) {
     setAnswered(true);
     clearInterval(timerRef.current);
     if (isCorrect) {
@@ -142,7 +138,7 @@ function App() {
     }
   };
 
-  const suivant = () => {
+  function suivant() {
     clearInterval(timerRef.current);
     let next;
     do {
@@ -151,7 +147,7 @@ function App() {
     setIndex(next);
   };
 
-  const rejouer = () => {
+  function rejouer() {
     clearInterval(timerRef.current);
     setVies(3);
     setGameOver(false);
@@ -161,9 +157,11 @@ function App() {
     setIndex(Math.floor(Math.random() * drapeaux.length));
   };
 
-
+  // Test session APRÈS tous les hooks
   if (!session) {
-    return <Auth onAuth={() => supabase.auth.getSession().then(({ data: { session } }) => setSession(session))} />;
+    return <Auth onAuth={() => {
+      supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
+    }} />;
   }
 
   if (showWelcome) {
@@ -171,6 +169,7 @@ function App() {
       onStart={() => { setShowWelcome(false); setSelectedGame("flags"); }}
       onCapitales={() => { setShowWelcome(false); setSelectedGame("capitales"); }}
       onCircuits={() => { setShowWelcome(false); setSelectedGame("circuits"); }}
+      onLogout={async () => { await supabase.auth.signOut(); }}
     />;
   }
 
