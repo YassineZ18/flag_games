@@ -214,7 +214,7 @@ function App() {
         style={{ width: 200, border: "1px solid #ccc", marginBottom: 20 }}
         onError={e => { e.target.onerror = null; e.target.src = "https://upload.wikimedia.org/wikipedia/commons/6/65/No-Image-Placeholder.svg"; }}
       />
-      <div style={{ color: '#ccc', fontSize: 12, marginBottom: 10 }}>{drapeaux[index].url}</div>
+      
       <div style={{ marginBottom: 20 }}>
         {propositions.map((option) => (
           <button
