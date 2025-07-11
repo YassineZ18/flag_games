@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 import Auth from './Auth';
+import Welcome from './Welcome';
+import CapitalesQuiz from './CapitalesQuiz';
+import CircuitsF1Quiz from './CircuitsF1Quiz';
 import './App.css';
 
 const drapeaux = [
@@ -34,6 +37,8 @@ function App() {
   const [index, setIndex] = useState(() => Math.floor(Math.random() * drapeaux.length));
   const [propositions, setPropositions] = useState([]);
   const [answered, setAnswered] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(true);
+  const [selectedGame, setSelectedGame] = useState(null);
 
   // Mélangeur
   function shuffle(array) {
@@ -45,22 +50,32 @@ function App() {
 
   // Propositions à chaque changement de drapeau
   useEffect(() => {
-    let autres = drapeaux.filter((_, i) => i !== index);
-    autres = shuffle(autres).slice(0, 3);
-    const opts = shuffle([
-      { label: drapeaux[index].pays, correct: true },
-      ...autres.map(d => ({ label: d.pays, correct: false }))
-    ]);
-    setPropositions(opts);
+    // Ne démarre le chrono que si on n'est plus sur l'écran Welcome
+    if (showWelcome) return;
+    // À chaque changement de drapeau, génère de nouvelles propositions
+    const bonnes = [drapeaux[index]];
+    let mauvaises = drapeaux.filter((_, i) => i !== index);
+    mauvaises = shuffle(mauvaises).slice(0, 3);
+    const options = shuffle([...bonnes, ...mauvaises]).map(flag => ({ label: flag.pays, correct: flag === drapeaux[index] }));
+    setPropositions(options);
     setAnswered(false);
-    setMessage("");
     setTimer(TIMER_DURATION);
-    if (timerRef.current) clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => {
-      setTimer(t => t - 1);
-    }, 1000);
+    clearInterval(timerRef.current);
+    if (!gameOver) {
+      timerRef.current = setInterval(() => {
+        setTimer(t => {
+          if (t <= 1) {
+            clearInterval(timerRef.current);
+            handleGuess(false);
+            return 0;
+          }
+          return t - 1;
+        });
+      }, 1000);
+    }
+    // Nettoyage à la sortie
     return () => clearInterval(timerRef.current);
-  }, [index]);
+  }, [index, showWelcome]);
 
   // Auth Supabase
   useEffect(() => {
@@ -146,13 +161,51 @@ function App() {
     setIndex(Math.floor(Math.random() * drapeaux.length));
   };
 
+
   if (!session) {
     return <Auth onAuth={() => supabase.auth.getSession().then(({ data: { session } }) => setSession(session))} />;
   }
 
+  if (showWelcome) {
+    return <Welcome 
+      onStart={() => { setShowWelcome(false); setSelectedGame("flags"); }}
+      onCapitales={() => { setShowWelcome(false); setSelectedGame("capitales"); }}
+      onCircuits={() => { setShowWelcome(false); setSelectedGame("circuits"); }}
+    />;
+  }
+
+  if (selectedGame === "capitales") {
+    return <CapitalesQuiz 
+      onHome={() => { setShowWelcome(true); setSelectedGame(null); }} 
+      onLogout={async () => { await supabase.auth.signOut(); }} 
+    />;
+  }
+
+  if (selectedGame === "circuits") {
+    return <CircuitsF1Quiz 
+      onHome={() => { setShowWelcome(true); setSelectedGame(null); }} 
+      onLogout={async () => { await supabase.auth.signOut(); }} 
+    />;
+  }
+
+  // Jeu des drapeaux
   return (
     <div style={{ textAlign: "center", marginTop: 40 }}>
-      <button onClick={async () => { await supabase.auth.signOut(); }} style={{ position: 'absolute', right: 20, top: 20, padding: '8px 16px', fontSize: 14 }}>Déconnexion</button>
+      <div style={{ position: 'absolute', right: 20, top: 20, display: 'flex', gap: 10 }}>
+        <button onClick={() => {
+          clearInterval(timerRef.current);
+          setShowWelcome(true);
+          setVies(3);
+          setGameOver(false);
+          setMessage("");
+          setSerie(0);
+          setBestSerie(0);
+          setIndex(Math.floor(Math.random() * drapeaux.length));
+        }} style={{ padding: '8px 16px', fontSize: 14, background: '#fff', border: '1px solid #00b894', color: '#00b894', borderRadius: 6, marginRight: 8, cursor: 'pointer' }}>
+          Accueil
+        </button>
+        <button onClick={async () => { await supabase.auth.signOut(); }} style={{ padding: '8px 16px', fontSize: 14 }}>Déconnexion</button>
+      </div>
       <img src="/logo.png" alt="Logo YZ" style={{ height: 80, marginBottom: 12 }} />
       <h1 style={{ marginBottom: 4 }}>Flag Games</h1>
       <div style={{ fontSize: 16, color: '#888', marginBottom: 18 }}>by Yassine Zaoui</div>
