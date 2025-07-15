@@ -25,6 +25,7 @@ const drapeaux = [
 ];
 
 function App() {
+  const [sessionExpired, setSessionExpired] = useState(false);
   const TIMER_DURATION = 10;
   const [session, setSession] = useState(null);
   const [message, setMessage] = useState("");
@@ -68,11 +69,20 @@ function App() {
 
   // Auth Supabase
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
       setSession(session);
+      if (!session && error) {
+        setSessionExpired(true);
+      }
     });
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
+      if (!session && (event === 'SIGNED_OUT' || event === 'USER_DELETED')) {
+        setSessionExpired(false); // déconnexion volontaire
+      }
+      if (!session && event === 'TOKEN_REFRESH_FAILED') {
+        setSessionExpired(true); // expiration automatique
+      }
     });
     return () => {
       listener.subscription.unsubscribe();
@@ -161,13 +171,16 @@ function App() {
   if (!session) {
     return (
       <div>
-        {session === null && (
+        {sessionExpired && (
           <div style={{background:'#ffeaa7',color:'#636e72',padding:16,borderRadius:8,margin:'24px auto',maxWidth:400,textAlign:'center',fontSize:16}}>
             Votre session a expiré ou vous avez été déconnecté automatiquement.<br/>Merci de vous reconnecter pour continuer à jouer.
           </div>
         )}
         <Auth onAuth={() => {
-          supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
+          supabase.auth.getSession().then(({ data: { session } }) => {
+            setSession(session);
+            setSessionExpired(false);
+          });
         }} />
       </div>
     );
