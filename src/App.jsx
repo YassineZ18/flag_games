@@ -159,9 +159,18 @@ function App() {
 
   // Test session APRÈS tous les hooks
   if (!session) {
-    return <Auth onAuth={() => {
-      supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
-    }} />;
+    return (
+      <div>
+        {session === null && (
+          <div style={{background:'#ffeaa7',color:'#636e72',padding:16,borderRadius:8,margin:'24px auto',maxWidth:400,textAlign:'center',fontSize:16}}>
+            Votre session a expiré ou vous avez été déconnecté automatiquement.<br/>Merci de vous reconnecter pour continuer à jouer.
+          </div>
+        )}
+        <Auth onAuth={() => {
+          supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
+        }} />
+      </div>
+    );
   }
 
   if (showWelcome) {
