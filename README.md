@@ -1,6 +1,25 @@
-# React + Vite
+# Jeu de Drapeaux 🎮
 
-## Déploiement sécurisé (Netlify ou Vercel)
+Une application de quiz interactive avec drapeaux, capitales et circuits de Formule 1.
+
+## 🚀 Installation
+
+```bash
+npm install
+cp .env.example .env
+# Remplissez les variables dans .env
+npm run dev
+```
+
+## 🔐 Sécurité
+
+**IMPORTANT** : Consultez [SECURITY.md](./SECURITY.md) pour les bonnes pratiques de sécurité.
+
+- ❌ Ne jamais committer le fichier `.env`
+- ✅ Utiliser `.env.example` comme template
+- ✅ Configurer les variables d'environnement sur Netlify
+
+## 📦 Déploiement sécurisé (Netlify ou Vercel)
 
 Pour mettre votre jeu en ligne de façon sécurisée :
 

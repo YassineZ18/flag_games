@@ -33,6 +33,26 @@ function App() {
   const [gameOver, setGameOver] = useState(false);
   const [serie, setSerie] = useState(0);
   const [bestSerie, setBestSerie] = useState(0);
+
+  // Sauvegarde bestSerie à chaque changement
+  useEffect(() => {
+    let ignore = false;
+    async function saveBestSerie() {
+      const { supabase } = await import('./supabaseClient');
+      const { saveScoreToSupabase } = await import('./supabaseScores');
+      const session = (await supabase.auth.getSession()).data.session;
+      if (session && session.user && bestSerie > 0) {
+        await saveScoreToSupabase({
+          user_id: session.user.id,
+          game: 'flags',
+          score: bestSerie
+        });
+        setRefreshScores(r => r + 1);
+      }
+    }
+    saveBestSerie();
+    return () => { ignore = true; };
+  }, [bestSerie]);
   const [timer, setTimer] = useState(TIMER_DURATION);
   const timerRef = React.useRef();
   const [index, setIndex] = useState(() => Math.floor(Math.random() * drapeaux.length));
@@ -40,6 +60,7 @@ function App() {
   const [answered, setAnswered] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
   const [selectedGame, setSelectedGame] = useState(null);
+  const [refreshScores, setRefreshScores] = useState(0);
 
   // Propositions à chaque changement de drapeau
   useEffect(() => {
@@ -138,8 +159,22 @@ function App() {
         if (v - 1 <= 0) {
           setGameOver(true);
           setMessage("Vous avez perdu !");
+          // Sauvegarde du score à la fin de la partie
+          (async () => {
+            const { supabase } = await import('./supabaseClient');
+            const { saveScoreToSupabase } = await import('./supabaseScores');
+            const session = (await supabase.auth.getSession()).data.session;
+            if (session && session.user) {
+              await saveScoreToSupabase({
+                user_id: session.user.id,
+                game: 'flags',
+                score: bestSerie
+              });
+              setRefreshScores(r => r + 1);
+            }
+          })();
           return 0;
-        }
+        } 
         setMessage("Mauvaise réponse. Essaie encore !");
         return v - 1;
       });
@@ -188,24 +223,51 @@ function App() {
 
   if (showWelcome) {
     return <Welcome 
+      refreshScores={refreshScores}
       onStart={() => { setShowWelcome(false); setSelectedGame("flags"); }}
       onCapitales={() => { setShowWelcome(false); setSelectedGame("capitales"); }}
       onCircuits={() => { setShowWelcome(false); setSelectedGame("circuits"); }}
-      onLogout={async () => { await supabase.auth.signOut(); }}
+      onLogout={async () => {
+  const { getAndClearScoresBuffer } = await import('./AppScoresBuffer');
+  const { saveScoreToSupabase } = await import('./supabaseScores');
+  const scores = getAndClearScoresBuffer();
+  for (const scoreObj of scores) {
+    await saveScoreToSupabase(scoreObj);
+  }
+  await supabase.auth.signOut();
+}}
     />;
   }
 
   if (selectedGame === "capitales") {
     return <CapitalesQuiz 
       onHome={() => { setShowWelcome(true); setSelectedGame(null); }} 
-      onLogout={async () => { await supabase.auth.signOut(); }} 
+      onLogout={async () => {
+  const { getAndClearScoresBuffer } = await import('./AppScoresBuffer');
+  const { saveScoreToSupabase } = await import('./supabaseScores');
+  const scores = getAndClearScoresBuffer();
+  for (const scoreObj of scores) {
+    await saveScoreToSupabase(scoreObj);
+  }
+  await supabase.auth.signOut();
+}} 
+      onScoreSaved={() => setRefreshScores(r => r + 1)}
     />;
   }
 
   if (selectedGame === "circuits") {
     return <CircuitsF1Quiz 
       onHome={() => { setShowWelcome(true); setSelectedGame(null); }} 
-      onLogout={async () => { await supabase.auth.signOut(); }} 
+      onLogout={async () => {
+  const { getAndClearScoresBuffer } = await import('./AppScoresBuffer');
+  const { saveScoreToSupabase } = await import('./supabaseScores');
+  const scores = getAndClearScoresBuffer();
+  for (const scoreObj of scores) {
+    await saveScoreToSupabase(scoreObj);
+  }
+  await supabase.auth.signOut();
+}} 
+      onScoreSaved={() => setRefreshScores(r => r + 1)}
     />;
   }
 

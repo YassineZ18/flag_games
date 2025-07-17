@@ -13,7 +13,9 @@ function RandomCircuitImage() {
   return <img src={src} alt="Circuit F1" style={{ height: 64, marginBottom: 12, borderRadius: 12, background: '#fff' }} />;
 }
 
-export default function Welcome({ onStart, onCapitales, onCircuits, onLogout }) {
+import WelcomeScores from './WelcomeScores';
+
+export default function Welcome({ onStart, onCapitales, onCircuits, onLogout, refreshScores }) {
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh',
@@ -40,6 +42,7 @@ export default function Welcome({ onStart, onCapitales, onCircuits, onLogout }) 
         <div style={{ marginBottom: 14 }}><b>Principe&nbsp;:</b> Choisis ton défi parmi les jeux proposés ci-dessous, tente d'établir la meilleure série et amuse-toi !</div>
         <div style={{ marginBottom: 14 }}><b>Objectif&nbsp;:</b> Découvre, apprends et bats tes records sur des thèmes différents&nbsp;!</div>
       </div>
+      <WelcomeScores refreshScores={refreshScores} />
       <div style={{ fontWeight: 700, fontSize: 28, marginBottom: 24, color: '#0a2239', letterSpacing: 1 }}>Jeux disponibles</div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 36, justifyContent: 'center', marginBottom: 12 }}>
         {/* Flag Game */}

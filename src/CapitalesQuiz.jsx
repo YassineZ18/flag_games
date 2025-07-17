@@ -20,7 +20,9 @@ const capitales = [
 
 const TIMER_DURATION = 10;
 
-export default function CapitalesQuiz({ onHome, onLogout }) {
+import { saveScoreToSupabase } from './supabaseScores';
+
+export default function CapitalesQuiz({ onHome, onLogout, onScoreSaved }) {
   const [index, setIndex] = useState(() => Math.floor(Math.random() * capitales.length));
   const [propositions, setPropositions] = useState([]);
   const [answered, setAnswered] = useState(false);
@@ -29,6 +31,25 @@ export default function CapitalesQuiz({ onHome, onLogout }) {
   const [vies, setVies] = useState(3);
   const [serie, setSerie] = useState(0);
   const [bestSerie, setBestSerie] = useState(0);
+
+  // Sauvegarde bestSerie à chaque changement
+  useEffect(() => {
+    let ignore = false;
+    async function saveBestSerie() {
+      const { supabase } = await import('./supabaseClient');
+      const session = (await supabase.auth.getSession()).data.session;
+      if (session && session.user && bestSerie > 0) {
+        await saveScoreToSupabase({
+          user_id: session.user.id,
+          game: 'capitales',
+          score: bestSerie
+        });
+        if (onScoreSaved) onScoreSaved();
+      }
+    }
+    saveBestSerie();
+    return () => { ignore = true; };
+  }, [bestSerie]);
   const [gameOver, setGameOver] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -90,22 +111,26 @@ export default function CapitalesQuiz({ onHome, onLogout }) {
         return newSerie;
       });
       setMessage("Bravo !");
-      setTimeout(() => {
-        setIndex(Math.floor(Math.random() * capitales.length));
-        setMessage("");
-      }, 900);
     } else {
       setVies(v => {
         if (v - 1 <= 0) {
           setGameOver(true);
           setMessage("Fini ! Votre meilleure série : " + bestSerie);
+          // Sauvegarde du score à la fin de la partie
+          (async () => {
+            const session = (await import('./supabaseClient')).supabase.auth.session?.();
+            if (session && session.user) {
+              await saveScoreToSupabase({
+                user_id: session.user.id,
+                game: 'capitales',
+                score: bestSerie
+              });
+              if (onScoreSaved) onScoreSaved();
+            }
+          })();
           return 0;
         }
         setMessage("Raté !");
-        setTimeout(() => {
-          setIndex(Math.floor(Math.random() * capitales.length));
-          setMessage("");
-        }, 900);
         setSerie(0);
         return v - 1;
       });
@@ -163,6 +188,30 @@ export default function CapitalesQuiz({ onHome, onLogout }) {
             {option.label}
           </button>
         ))}
+        {/* Bouton Suivant */}
+        {answered && !gameOver && (
+          <button
+            onClick={() => {
+              setIndex(Math.floor(Math.random() * capitales.length));
+              setMessage("");
+              setAnswered(false);
+            }}
+            style={{
+              fontSize: 20,
+              padding: '12px 32px',
+              margin: '0 10px 10px 0',
+              borderRadius: 8,
+              background: '#fdcb6e',
+              color: '#2d3436',
+              fontWeight: 700,
+              border: 'none',
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px #fdcb6e44'
+            }}
+          >
+            Suivant
+          </button>
+        )}
       </div>
       <div style={{ fontSize: 22, margin: '18px 0', color: message.startsWith('Bravo') ? '#00b894' : '#e17055' }}>{message}</div>
       <div style={{ fontSize: 18, marginBottom: 24 }}>Temps restant : <b>{timer}s</b></div>
